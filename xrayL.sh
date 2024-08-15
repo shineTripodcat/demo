@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 DEFAULT_START_PORT=20000                         # 默认起始端口
 DEFAULT_SOCKS_USERNAME="userb"                   # 默认socks账号
@@ -100,7 +100,7 @@ config_xray() {
             config_content+="[inbounds.streamSettings]\n"
             config_content+="network = \"ws\"\n"
             config_content+="[inbounds.streamSettings.wsSettings]\n"
-                        config_content+="path = \"$WS_PATH\"\n\n"
+            config_content+="path = \"$WS_PATH\"\n\n"
         fi
         config_content+="[[outbounds]]\n"
         config_content+="sendThrough = \"${IP_ADDRESSES[i]}\"\n"
