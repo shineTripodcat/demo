@@ -3,10 +3,11 @@
 DEFAULT_START_PORT=20000                         # 默认起始端口
 DEFAULT_SOCKS_USERNAME="userb"                   # 默认socks账号
 DEFAULT_SOCKS_PASSWORD="passwordb"               # 默认socks密码
-DEFAULT_WS_PATH="/ws"                             # 默认ws路径
-DEFAULT_UUID=$(cat /proc/sys/kernel/random/uuid)  # 默认随机UUID
+DEFAULT_WS_PATH="/ws"                            # 默认ws路径
+DEFAULT_UUID=$(cat /proc/sys/kernel/random/uuid) # 默认随机UUID
 
-IP_ADDRESSES=($(hostname -I))
+# 获取 IP 地址列表
+IP_ADDRESSES=($(hostname -i))
 
 install_xray() {
     echo "安装 Xray..."
@@ -59,18 +60,23 @@ config_xray() {
         exit 1
     fi
 
-    read -p "起始端口 (默认 $DEFAULT_START_PORT): " START_PORT
+    echo -n "起始端口 (默认 $DEFAULT_START_PORT): "
+    read START_PORT
     START_PORT=${START_PORT:-$DEFAULT_START_PORT}
     if [ "$config_type" == "socks" ]; then
-        read -p "SOCKS 账号 (默认 $DEFAULT_SOCKS_USERNAME): " SOCKS_USERNAME
+        echo -n "SOCKS 账号 (默认 $DEFAULT_SOCKS_USERNAME): "
+        read SOCKS_USERNAME
         SOCKS_USERNAME=${SOCKS_USERNAME:-$DEFAULT_SOCKS_USERNAME}
 
-        read -p "SOCKS 密码 (默认 $DEFAULT_SOCKS_PASSWORD): " SOCKS_PASSWORD
+        echo -n "SOCKS 密码 (默认 $DEFAULT_SOCKS_PASSWORD): "
+        read SOCKS_PASSWORD
         SOCKS_PASSWORD=${SOCKS_PASSWORD:-$DEFAULT_SOCKS_PASSWORD}
     elif [ "$config_type" == "vmess" ]; then
-        read -p "UUID (默认随机): " UUID
+        echo -n "UUID (默认随机): "
+        read UUID
         UUID=${UUID:-$DEFAULT_UUID}
-        read -p "WebSocket 路径 (默认 $DEFAULT_WS_PATH): " WS_PATH
+        echo -n "WebSocket 路径 (默认 $DEFAULT_WS_PATH): "
+        read WS_PATH
         WS_PATH=${WS_PATH:-$DEFAULT_WS_PATH}
     fi
 
@@ -94,14 +100,14 @@ config_xray() {
             config_content+="[inbounds.streamSettings]\n"
             config_content+="network = \"ws\"\n"
             config_content+="[inbounds.streamSettings.wsSettings]\n"
-            config_content+="path = \"$WS_PATH\"\n\n"
+                        config_content+="path = \"$WS_PATH\"\n\n"
         fi
         config_content+="[[outbounds]]\n"
         config_content+="sendThrough = \"${IP_ADDRESSES[i]}\"\n"
         config_content+="protocol = \"freedom\"\n"
         config_content+="tag = \"tag_$((i + 1))\"\n\n"
-        config_content+="[[routing.rules]]\n
-	config_content+="type = \"field\"\n"
+        config_content+="[[routing.rules]]\n"
+        config_content+="type = \"field\"\n"
         config_content+="inboundTag = \"tag_$((i + 1))\"\n"
         config_content+="outboundTag = \"tag_$((i + 1))\"\n\n\n"
     done
@@ -129,7 +135,8 @@ main() {
     if [ $# -eq 1 ]; then
         config_type="$1"
     else
-        read -p "选择生成的节点类型 (socks/vmess): " config_type
+        echo -n "选择生成的节点类型 (socks/vmess): "
+        read config_type
     fi
     if [ "$config_type" == "vmess" ]; then
         config_xray "vmess"
