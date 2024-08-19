@@ -5,10 +5,10 @@ DEFAULT_START_PORT=20000                         # 默认起始端口
 DEFAULT_SOCKS_USERNAME="userb"                   # 默认 SOCKS 账号
 DEFAULT_SOCKS_PASSWORD="passwordb"               # 默认 SOCKS 密码
 DEFAULT_WS_PATH="/ws"                            # 默认 WebSocket 路径
-DEFAULT_UUID=$(cat /proc/sys/kernel/random/uuid) # 默认随机 UUID
 
 # 获取本机 IP 地址
 IP_ADDRESSES=($(hostname -I))
+IP_COUNT_MAX=${#IP_ADDRESSES[@]} # 最大 IP 数量
 
 # 安装 Xray
 install_xray() {
@@ -87,7 +87,11 @@ config_xray() {
             read -p "起始端口 (默认 $DEFAULT_START_PORT): " START_PORT
             START_PORT=${START_PORT:-$DEFAULT_START_PORT}
             
-            read -p "代理池 IP 数量: " IP_COUNT
+            read -p "代理池 IP 数量 (最大 $IP_COUNT_MAX): " IP_COUNT
+            if [ "$IP_COUNT" -gt "$IP_COUNT_MAX" ]; then
+                echo "代理池 IP 数量不能超过 $IP_COUNT_MAX."
+                continue
+            fi
 
             # 检查端口是否被占用
             port_conflict=false
@@ -127,12 +131,12 @@ config_xray() {
             done
 
         elif [ "$config_type" == "vmess" ]; then
-            read -p "UUID (默认随机): " UUID
-            UUID=${UUID:-$DEFAULT_UUID}
             read -p "WebSocket 路径 (默认 $DEFAULT_WS_PATH): " WS_PATH
             WS_PATH=${WS_PATH:-$DEFAULT_WS_PATH}
 
             for ((i = 0; i < IP_COUNT; i++)); do
+                UUID=$(cat /proc/sys/kernel/random/uuid) # 每个用户生成不同的 UUID
+
                 # VMess 配置
                 config_content+="[[inbounds]]\n"
                 config_content+="port = $((START_PORT + i))\n"
@@ -173,7 +177,7 @@ config_xray() {
     fi
 
     # 保存配置到文件
-    echo -e "$config_content" > "$CONFIG_FILE"
+    echo -e "$config_content" >> "$CONFIG_FILE"
     systemctl restart xrayL.service
     systemctl --no-pager status xrayL.service
     echo ""
@@ -215,7 +219,6 @@ main() {
     if [ $# -eq 1 ]; then
         config_type="$1"
     else
-
         read -p "选择生成的节点类型 (socks/vmess): " config_type
     fi
 
@@ -232,3 +235,4 @@ main() {
 
 # 执行主函数
 main "$@"
+
