@@ -39,6 +39,7 @@ EOF
     systemctl start xrayL.service
     echo "Xray 安装完成."
 }
+
 # 清除旧的配置并释放端口
 clear_old_config() {
     echo "清除旧的配置并释放端口..."
@@ -46,6 +47,7 @@ clear_old_config() {
     rm -f /etc/xrayL/*.toml
     echo "旧的配置已删除，端口已释放。"
 }
+
 # 配置 Xray
 config_xray() {
     config_type=$1
@@ -90,14 +92,14 @@ config_xray() {
             fi
         done
 
-        for ((i = 0; i < IP_COUNT; i++)); do
-            if [ "$config_type" == "socks" ]; then
-                read -p "SOCKS 账号 (默认 $DEFAULT_SOCKS_USERNAME): " SOCKS_USERNAME
-                SOCKS_USERNAME=${SOCKS_USERNAME:-$DEFAULT_SOCKS_USERNAME}
+        if [ "$config_type" == "socks" ]; then
+            read -p "SOCKS 账号 (默认 $DEFAULT_SOCKS_USERNAME): " SOCKS_USERNAME
+            SOCKS_USERNAME=${SOCKS_USERNAME:-$DEFAULT_SOCKS_USERNAME}
 
-                read -p "SOCKS 密码 (默认 $DEFAULT_SOCKS_PASSWORD): " SOCKS_PASSWORD
-                SOCKS_PASSWORD=${SOCKS_PASSWORD:-$DEFAULT_SOCKS_PASSWORD}
+            read -p "SOCKS 密码 (默认 $DEFAULT_SOCKS_PASSWORD): " SOCKS_PASSWORD
+            SOCKS_PASSWORD=${SOCKS_PASSWORD:-$DEFAULT_SOCKS_PASSWORD}
 
+            for ((i = 0; i < IP_COUNT; i++)); do
                 # SOCKS 配置
                 config_content+="[[inbounds]]\n"
                 config_content+="port = $((START_PORT + i))\n"
@@ -109,13 +111,15 @@ config_xray() {
                 config_content+="[[inbounds.settings.accounts]]\n"
                 config_content+="user = \"$SOCKS_USERNAME\"\n"
                 config_content+="pass = \"$SOCKS_PASSWORD\"\n\n"
+            done
 
-            elif [ "$config_type" == "vmess" ]; then
-                read -p "UUID (默认随机): " UUID
-                UUID=${UUID:-$DEFAULT_UUID}
-                read -p "WebSocket 路径 (默认 $DEFAULT_WS_PATH): " WS_PATH
-                WS_PATH=${WS_PATH:-$DEFAULT_WS_PATH}
+        elif [ "$config_type" == "vmess" ]; then
+            read -p "UUID (默认随机): " UUID
+            UUID=${UUID:-$DEFAULT_UUID}
+            read -p "WebSocket 路径 (默认 $DEFAULT_WS_PATH): " WS_PATH
+            WS_PATH=${WS_PATH:-$DEFAULT_WS_PATH}
 
+            for ((i = 0; i < IP_COUNT; i++)); do
                 # VMess 配置
                 config_content+="[[inbounds]]\n"
                 config_content+="port = $((START_PORT + i))\n"
@@ -128,18 +132,18 @@ config_xray() {
                 config_content+="network = \"ws\"\n"
                 config_content+="[inbounds.streamSettings.wsSettings]\n"
                 config_content+="path = \"$WS_PATH\"\n\n"
-            fi
+            done
+        fi
 
-            # 公共配置部分
-            config_content+="sendThrough = \"${IP_ADDRESSES[0]}\"\n"
-            config_content+="protocol = \"freedom\"\n"
-            config_content+="tag = \"tag_$((i + 1))\"\n\n"
+        # 公共配置部分
+        config_content+="sendThrough = \"${IP_ADDRESSES[0]}\"\n"
+        config_content+="protocol = \"freedom\"\n"
+        config_content+="tag = \"tag_$((i + 1))\"\n\n"
 
-            config_content+="[[routing.rules]]\n"
-            config_content+="type = \"field\"\n"
-            config_content+="inboundTag = \"tag_$((i + 1))\"\n"
-            config_content+="outboundTag = \"tag_$((i + 1))\"\n\n\n"
-        done
+        config_content+="[[routing.rules]]\n"
+        config_content+="type = \"field\"\n"
+        config_content+="inboundTag = \"tag_$((i + 1))\"\n"
+        config_content+="outboundTag = \"tag_$((i + 1))\"\n\n\n"
 
         # 检查是否继续添加用户
         read -p "是否继续添加用户？(y/n): " add_more
@@ -177,6 +181,9 @@ config_xray() {
 
 # 主函数
 main() {
+    # 清除旧的配置并释放端口
+    clear_old_config
+
     # 检查 Xray 是否已安装
     [ -x "$(command -v xrayL)" ] || install_xray
     
