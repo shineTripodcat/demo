@@ -39,7 +39,13 @@ EOF
     systemctl start xrayL.service
     echo "Xray 安装完成."
 }
-
+# 清除旧的配置并释放端口
+clear_old_config() {
+    echo "清除旧的配置并释放端口..."
+    systemctl stop xrayL.service
+    rm -f /etc/xrayL/*.toml
+    echo "旧的配置已删除，端口已释放。"
+}
 # 配置 Xray
 config_xray() {
     config_type=$1
