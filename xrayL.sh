@@ -48,6 +48,19 @@ clear_old_config() {
     echo "旧的配置已删除，端口已释放。"
 }
 
+# 读取现有配置并提示端口占用情况
+read_existing_config() {
+    echo "读取现有配置并提示端口占用情况..."
+    if [ -f /etc/xrayL/socks5_config.toml ]; then
+        echo "现有 SOCKS 配置:"
+        grep "port =" /etc/xrayL/socks5_config.toml
+    fi
+    if [ -f /etc/xrayL/vmess_config.toml ]; then
+        echo "现有 VMess 配置:"
+        grep "port =" /etc/xrayL/vmess_config.toml
+    fi
+}
+
 # 配置 Xray
 config_xray() {
     config_type=$1
@@ -97,9 +110,9 @@ config_xray() {
             SOCKS_USERNAME=${SOCKS_USERNAME:-$DEFAULT_SOCKS_USERNAME}
 
             read -p "SOCKS 密码 (默认 $DEFAULT_SOCKS_PASSWORD): " SOCKS_PASSWORD
-            SOCKS_PASSWORD=${SOCKS_PASSWORD:-$DEFAULT_SOCKS_PASSWORD}
+            SOCKS_PASSWORD=${SOCKS_PASSWORD:-$DEFAULT_SOCKS_PASSWORD
 
-            for ((i = 0; i < IP_COUNT; i++)); do
+                        for ((i = 0; i < IP_COUNT; i++)); do
                 # SOCKS 配置
                 config_content+="[[inbounds]]\n"
                 config_content+="port = $((START_PORT + i))\n"
@@ -160,7 +173,7 @@ config_xray() {
     fi
 
     # 保存配置到文件
-    echo -e "$config_content" > "$CONFIG_FILE"
+    echo -e "$config_content" >> "$CONFIG_FILE"
     systemctl restart xrayL.service
     systemctl --no-pager status xrayL.service
     echo ""
@@ -181,8 +194,19 @@ config_xray() {
 
 # 主函数
 main() {
-    # 清除旧的配置并释放端口
-    clear_old_config
+    # 询问用户是否重新配置或添加新用户
+    read -p "选择操作类型：重新配置 (r) 还是添加新用户 (a): " operation_type
+
+    if [ "$operation_type" == "r" ]; then
+        # 清除旧的配置并释放端口
+        clear_old_config
+    elif [ "$operation_type" == "a" ]; then
+        # 读取现有配置并提示端口占用情况
+        read_existing_config
+    else
+        echo "无效的选择，退出脚本。"
+        exit 1
+    fi
 
     # 检查 Xray 是否已安装
     [ -x "$(command -v xrayL)" ] || install_xray
