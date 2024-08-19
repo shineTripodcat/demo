@@ -55,19 +55,34 @@ config_xray() {
     config_content=""
 
     while true; do
+        # 询问是否添加用户
+        read -p "是否添加用户？(y/n): " add_user
+        if [ "$add_user" != "y" ]; then
+            break
+        fi
+
         # 用户输入起始端口和代理池数量
         while true; do
             read -p "起始端口 (默认 $DEFAULT_START_PORT): " START_PORT
             START_PORT=${START_PORT:-$DEFAULT_START_PORT}
             
-            if ! lsof -i:"$START_PORT" > /dev/null; then
+            read -p "代理池 IP 数量: " IP_COUNT
+
+            # 检查端口是否被占用
+            port_conflict=false
+            for ((i = 0; i < IP_COUNT; i++)); do
+                if lsof -i:"$((START_PORT + i))" > /dev/null; then
+                    port_conflict=true
+                    break
+                fi
+            done
+            
+            if [ "$port_conflict" = false ]; then
                 break
             else
-                echo "端口 $START_PORT 已被占用，请选择其他端口。"
+                echo "端口范围 $START_PORT-$((START_PORT + IP_COUNT - 1)) 中有端口被占用，请选择其他起始端口。"
             fi
         done
-        
-        read -p "代理池 IP 数量: " IP_COUNT
 
         for ((i = 0; i < IP_COUNT; i++)); do
             if [ "$config_type" == "socks" ]; then
@@ -179,4 +194,3 @@ main() {
 
 # 执行主函数
 main "$@"
-
