@@ -110,9 +110,9 @@ config_xray() {
             SOCKS_USERNAME=${SOCKS_USERNAME:-$DEFAULT_SOCKS_USERNAME}
 
             read -p "SOCKS 密码 (默认 $DEFAULT_SOCKS_PASSWORD): " SOCKS_PASSWORD
-            SOCKS_PASSWORD=${SOCKS_PASSWORD:-$DEFAULT_SOCKS_PASSWORD
+            SOCKS_PASSWORD=${SOCKS_PASSWORD:-$DEFAULT_SOCKS_PASSWORD}
 
-                        for ((i = 0; i < IP_COUNT; i++)); do
+            for ((i = 0; i < IP_COUNT; i++)); do
                 # SOCKS 配置
                 config_content+="[[inbounds]]\n"
                 config_content+="port = $((START_PORT + i))\n"
@@ -173,7 +173,7 @@ config_xray() {
     fi
 
     # 保存配置到文件
-    echo -e "$config_content" >> "$CONFIG_FILE"
+    echo -e "$config_content" > "$CONFIG_FILE"
     systemctl restart xrayL.service
     systemctl --no-pager status xrayL.service
     echo ""
@@ -215,6 +215,7 @@ main() {
     if [ $# -eq 1 ]; then
         config_type="$1"
     else
+
         read -p "选择生成的节点类型 (socks/vmess): " config_type
     fi
 
