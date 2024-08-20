@@ -82,6 +82,10 @@ config_xray() {
             break
         fi
 
+        if [ "$config_type" == "vmess" ]; then
+            UUID=$(cat /proc/sys/kernel/random/uuid) # 为每个用户生成一个 UUID
+        fi
+
         # 用户输入起始端口和代理池数量
         while true; do
             read -p "起始端口 (默认 $DEFAULT_START_PORT): " START_PORT
@@ -135,8 +139,6 @@ config_xray() {
             WS_PATH=${WS_PATH:-$DEFAULT_WS_PATH}
 
             for ((i = 0; i < IP_COUNT; i++)); do
-                UUID=$(cat /proc/sys/kernel/random/uuid) # 每个用户生成不同的 UUID
-
                 # VMess 配置
                 config_content+="[[inbounds]]\n"
                 config_content+="port = $((START_PORT + i))\n"
@@ -235,4 +237,3 @@ main() {
 
 # 执行主函数
 main "$@"
-
