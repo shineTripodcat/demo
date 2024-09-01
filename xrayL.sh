@@ -7,43 +7,40 @@ DEFAULT_SOCKS_PASSWORD="passwordb"               # 默认 SOCKS 密码
 DEFAULT_WS_PATH="/ws"                            # 默认 WebSocket 路径
 
 # 获取本机 IP 地址
-IP_ADDRESSES=($(hostname -I))
+IP_ADDRESSES=($(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'))
 IP_COUNT_MAX=${#IP_ADDRESSES[@]} # 最大 IP 数量
 
 # 安装 Xray
 install_xray() {
     echo "安装 Xray..."
-    apt-get install unzip -y || yum install unzip -y
+    apk add unzip
     wget https://github.com/XTLS/Xray-core/releases/download/v1.8.3/Xray-linux-64.zip
     unzip Xray-linux-64.zip
     mv xray /usr/local/bin/xrayL
     chmod +x /usr/local/bin/xrayL
 
     # 创建系统服务
-    cat <<EOF >/etc/systemd/system/xrayL.service
-[Unit]
-Description=XrayL Service
-After=network.target
+    cat <<EOF >/etc/init.d/xrayL
+#!/sbin/openrc-run
 
-[Service]
-ExecStart=/usr/local/bin/xrayL -c /etc/xrayL/config.toml
-Restart=on-failure
-User=nobody
-RestartSec=3
-
-[Install]
-WantedBy=multi-user.target
+description="XrayL Service"
+command="/usr/local/bin/xrayL -c /etc/xrayL/config.toml"
+command_background=true
+pidfile="/run/xrayL.pid"
+depend() {
+    need net
+}
 EOF
-    systemctl daemon-reload
-    systemctl enable xrayL.service
-    systemctl start xrayL.service
+    chmod +x /etc/init.d/xrayL
+    rc-update add xrayL default
+    service xrayL start
     echo "Xray 安装完成."
 }
 
 # 清除旧的配置并释放端口
 clear_old_config() {
     echo "清除旧的配置并释放端口..."
-    systemctl stop xrayL.service
+    service xrayL stop
     rm -f /etc/xrayL/*.toml
     echo "旧的配置已删除，端口已释放。"
 }
@@ -67,7 +64,7 @@ config_xray() {
     mkdir -p /etc/xrayL
 
     # 验证配置类型
-    if [ "$config_type" != "socks" ] && [ "$config_type" != "vmess" ]; then
+    if [ "$config_type"!= "socks" ] && [ "$config_type"!= "vmess" ]; then
         echo "类型错误！仅支持 socks 和 vmess."
         exit 1
     fi
@@ -78,7 +75,7 @@ config_xray() {
     while true; do
         # 询问是否添加用户
         read -p "是否添加用户？(y/n): " add_user
-        if [ "$add_user" != "y" ]; then
+        if [ "$add_user"!= "y" ]; then
             break
         fi
 
@@ -166,7 +163,7 @@ config_xray() {
 
         # 检查是否继续添加用户
         read -p "是否继续添加用户？(y/n): " add_more
-        if [ "$add_more" != "y" ]; then
+        if [ "$add_more"!= "y" ]; then
             break
         fi
     done
@@ -180,8 +177,8 @@ config_xray() {
 
     # 保存配置到文件
     echo -e "$config_content" >> "$CONFIG_FILE"
-    systemctl restart xrayL.service
-    systemctl --no-pager status xrayL.service
+    service xrayL restart
+    service xrayL status
     echo ""
     echo "生成 $config_type 配置完成"
     echo "配置文件保存为: $CONFIG_FILE"
