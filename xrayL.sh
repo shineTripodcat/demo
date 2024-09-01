@@ -7,7 +7,7 @@ DEFAULT_SOCKS_PASSWORD="passwordb"               # 默认 SOCKS 密码
 DEFAULT_WS_PATH="/ws"                            # 默认 WebSocket 路径
 
 # 获取本机 IP 地址
-IP_ADDRESSES=($(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'))
+IP_ADDRESSES=($(ip -6 addr show | grep -Eo 'inet6 [0-9a-fA-F:]+/[0-9]+' | grep -Eo '([0-9a-fA-F:]+)/[0-9]+' | cut -d '/' -f 1))
 IP_COUNT_MAX=${#IP_ADDRESSES[@]} # 最大 IP 数量
 
 # 安装 Xray
